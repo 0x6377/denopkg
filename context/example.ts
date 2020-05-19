@@ -1,18 +1,11 @@
 import { create, DoneReason } from "./context.ts";
-console.log("check");
 const ctx = create();
-console.log("check");
 const child = ctx.child();
-console.log("check");
-//child.setDeadline(50);
-//const cancel = ctx.cancellation();
-//ctx.setDeadline(50);
-//cancel();
 await ctx.done();
-console.log("check");
+console.log("waiting for child");
 const childReason = await child.wait();
-console.log("check");
 const parentReason = await ctx.wait();
-console.log("check");
+// the cancel should be the reason
+
 console.log("child:", DoneReason[childReason]);
 console.log("parent:", DoneReason[parentReason]);

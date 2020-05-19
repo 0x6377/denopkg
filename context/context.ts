@@ -37,7 +37,8 @@ export function monotonicId(): string {
 }
 
 // this is for a public, private method...
-const $parentDone = Symbol();
+const $beforeDone = Symbol();
+const $isDone = Symbol();
 
 // here is a partial implementation - it's easier to add the final
 // two methods in the creation function.
@@ -46,24 +47,30 @@ class ContextImpl implements Omit<Context, "child" | "top"> {
   #reason: Promise<DoneReason>;
   #deferral = (x: DoneReason) => {};
   #deadline: number = -1;
+  #callbacks: Array<() => Promise<void> | void> = [];
+  [$isDone]: false;
 
-  constructor(
-    public readonly id: string,
-    private readonly children: Array<ContextImpl>
-  ) {
+  constructor(public readonly id: string, parent?: ContextImpl) {
     this.#reason = new Promise((resolve) => {
       this.#deferral = async (reason) => {
-        // cancel all children first
+        if (this[$isDone]) {
+          return;
+        }
+        const callbacks = this.#callbacks;
+        this.#callbacks = [];
+        await Promise.all(callbacks.map((fn) => fn()));
         this.clearDeadline();
-        await Promise.all(children.map((child) => child[$parentDone]()));
         resolve(reason);
       };
     });
+    parent?.[$beforeDone](() => this.#deferral(DoneReason.ParentDone));
   }
 
-  public [$parentDone](): Promise<DoneReason> {
-    this.#deferral(DoneReason.ParentDone);
-    return this.wait();
+  public [$beforeDone](cb: () => Promise<void> | void): void {
+    if (this[$isDone]) {
+      throw new Error("Cannot register callback on finished context");
+    }
+    this.#callbacks.push(cb);
   }
 
   public get lifetime(): number {
@@ -83,6 +90,9 @@ class ContextImpl implements Omit<Context, "child" | "top"> {
   }
 
   public setDeadline(ms: number) {
+    if (this[$isDone]) {
+      return;
+    }
     this.#deadline = setTimeout(
       () => this.#deferral(DoneReason.DeadlineExceeded),
       ms
@@ -111,21 +121,27 @@ function create<Ctx extends Context = Context>(
     enhancer?: (c: Context) => Ctx;
   } = {}
 ): Ctx | Context {
-  const child = enhancedChild(args.enhancer ?? noEnhancer);
+  const createChild = enhancedChild(args.enhancer ?? noEnhancer);
   const id = args.id ?? monotonicId;
-  const top = child();
+  const top = createChild();
   return top;
 
-  function enhancedChild<C extends Context>(en: (c: Context) => C): () => C {
-    return () => {
-      const children: Array<ContextImpl> = [];
-      const ctx = en(
-        Object.assign(new ContextImpl(id(), children), {
-          child: enhancedChild(en),
+  function enhancedChild<C extends Context>(
+    en: (c: Context) => C
+  ): (parent?: ContextImpl) => C {
+    return (parent) => {
+      const impl = new ContextImpl(id(), parent);
+      return en(
+        Object.assign(impl, {
+          child() {
+            if (impl[$isDone]) {
+              throw new Error("Cannot create a child of a closed context");
+            }
+            return createChild(impl);
+          },
           top: () => top,
         })
       );
-      return ctx;
     };
   }
 }

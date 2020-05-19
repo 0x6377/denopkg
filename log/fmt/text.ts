@@ -31,8 +31,6 @@ const levelStrings = {
 
 /**
  * Text Formatter: Output for humans
- *
- * @TODO better colors, formatting, some options for things like timestamp format (inc. relative)
  */
 export const textFormatter: (opts?: Partial<TextOptions>) => LogFormatter = (
   opts = {}
@@ -69,9 +67,6 @@ export enum TimeStyle {
 
 export type TextOptions = {
   time: TimeStyle;
-  // this doesn't know anything about the sink.
-  // so you should do "Deno.isatty("
-  color: true | false;
 };
 
 function formatTime(ts: number, style: TimeStyle, initialTs: number): string {
@@ -96,5 +91,4 @@ function formatTime(ts: number, style: TimeStyle, initialTs: number): string {
 
 const defaultOptions: TextOptions = {
   time: TimeStyle.Kitchen,
-  color: !Deno.noColor,
 };

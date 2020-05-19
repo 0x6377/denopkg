@@ -1,5 +1,6 @@
 import { create, Level } from "./mod.ts";
 import { textFormatter, TimeStyle } from "./fmt/text.ts";
+//import { jsonFormatter } from "./fmt/json.ts";
 import { LevelNames } from "./levels.ts";
 
 const log = create(
@@ -8,6 +9,7 @@ const log = create(
     formatter: textFormatter({
       time: TimeStyle.Kitchen,
     }),
+    //formatter: jsonFormatter({ style: "default" }),
   },
   {
     host: "localhost",

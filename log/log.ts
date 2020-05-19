@@ -1,8 +1,8 @@
 import { sprintf } from "./deps.ts";
 import { LogFormatter, RecordMeta } from "./fmt.ts";
 import { jsonFormatter } from "./fmt/json.ts";
-
 import { Level, LevelNames, getLevelName } from "./levels.ts";
+import { tagEnabled } from "./debug.ts";
 
 // The log function returns a promise which is guarranteed not to reject,
 // errors are handled by the `onError` option. If you don't want to wait
@@ -16,6 +16,10 @@ export type LogFn = {
 export type Logger = {
   [lvl in LevelNames]: LogFn;
 } & {
+  // this is a logger that is only enabled IFF LOG_DEBUG=tag,...
+  // if the environment variable is set this ALWAYS logs, else it NEVER
+  // logs.
+  debuglog(tag: string): LogFn;
   // bind props to _this_ logger
   bind(props: RecordMeta): void;
   // create a new logger with current props AND new ones. current logger not affected
@@ -62,7 +66,7 @@ function make(options: LogInternals, props: RecordMeta): Logger {
 function setDefaultOptions(partial: Partial<LogOptions>): LogInternals {
   const opts = Object.assign(
     {
-      level: Level.TRACE,
+      level: Level.ALL,
       formatter: jsonFormatter(),
       sink: Deno.stdout,
       onError: console.error,
@@ -123,7 +127,7 @@ async function log(
   }
 }
 
-function makeLogLevelFn(level: Level): LogFn {
+function makeLogLevelFn(level: Level, extraMeta: RecordMeta = {}): LogFn {
   return async function f(
     this: Logger & PrivateProps,
     ...args: any[]
@@ -143,7 +147,7 @@ function makeLogLevelFn(level: Level): LogFn {
 
       return log(
         this.options,
-        Object.assign({}, this.props, meta),
+        Object.assign({}, this.props, meta, extraMeta),
         Date.now(),
         level,
         fmt,
@@ -154,7 +158,6 @@ function makeLogLevelFn(level: Level): LogFn {
 }
 
 const prototype = {
-  [getLevelName(Level.TRACE)]: makeLogLevelFn(Level.TRACE),
   [getLevelName(Level.VERBOSE)]: makeLogLevelFn(Level.VERBOSE),
   [getLevelName(Level.INFO)]: makeLogLevelFn(Level.INFO),
   [getLevelName(Level.DEBUG)]: makeLogLevelFn(Level.DEBUG),
@@ -167,5 +170,13 @@ const prototype = {
   bind(this: PrivateProps, props: RecordMeta) {
     // update internal props.
     Object.assign(this.props, props);
+  },
+  debuglog(this: Logger, tag: string): LogFn {
+    if (tagEnabled(tag)) {
+      return makeLogLevelFn(Level.DEBUG, { $debug: tag }).bind(this);
+    }
+    return async () => {
+      // no-op
+    };
   },
 } as Logger;

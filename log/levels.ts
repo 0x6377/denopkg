@@ -1,16 +1,15 @@
 export enum Level {
-  ALL = 0,
-  TRACE = 10,
+  ALL = -Infinity,
   VERBOSE = 20,
   INFO = 30,
-  DEBUG = 40,
   WARN = 50,
   ERROR = 60,
-  SILENT = Infinity,
+  SILENT = 98,
+  // NB Debug level is HIGHER than silent!
+  DEBUG = 99,
 }
 
 const levelNames = {
-  [Level.TRACE]: "trace",
   [Level.VERBOSE]: "verbose",
   [Level.INFO]: "info",
   [Level.DEBUG]: "debug",

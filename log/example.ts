@@ -1,8 +1,5 @@
-import { create, Level } from "https://deno.0x6377.dev/log/mod.ts";
-import {
-  textFormatter,
-  TimeStyle,
-} from "https://deno.0x6377.dev/log/fmt/text.ts";
+import { create, Level } from "./mod.ts";
+import { textFormatter, TimeStyle } from "./fmt/text.ts";
 import { LevelNames } from "./levels.ts";
 
 const log = create(
@@ -27,12 +24,11 @@ function logTest(level: LevelNames) {
   );
 }
 
-logTest("trace");
 logTest("verbose");
 logTest("info");
-logTest("debug");
 logTest("warn");
 logTest("error");
+logTest("debug");
 
 const child = log.child({ child: 1 });
 child.debug("child at debug level at: %v", new Date().toISOString());
@@ -52,5 +48,13 @@ and so has line
 breaks in it
 which should be handled nicely..
 `);
+
+// an ENV based log.
+const debug = log.debuglog("test:log");
+
+debug(
+  { only: "with env" },
+  "Only logged when LOG_DEBUG=test:log or LOG_DEBUG=*, etc..."
+);
 
 await log.flush();

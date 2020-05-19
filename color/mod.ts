@@ -1,7 +1,7 @@
 // the data, "codes" are from:
 // https://github.com/chalk/ansi-styles/blob/cbc3de8b0d9822f3a9e2cebe154502d071fc13b1/index.js
-import { ColorFn, createStyle } from "./fn.ts";
-export { ColorFn };
+import { createStyle } from "./fn.ts";
+export { ColorFn, setColorEnabled } from "./fn.ts";
 
 // modifiers
 export const reset = createStyle(0, 0);

@@ -1,33 +1,32 @@
 import { LogFormatter } from "../fmt.ts";
 import { Level } from "../levels.ts";
+
+// we can do relative imports even in the mono-repo, because it will all be served
+// from a common root anyway, so they will resolve
 import {
   red,
   cyan,
   gray,
   yellow,
   green,
-  magenta,
   bold,
   white,
-  cyanBright,
-} from "https://deno.0x6377.dev/color/mod.ts";
+} from "../../color/mod.ts";
 
 const levelColors = {
-  [Level.TRACE]: white,
-  [Level.VERBOSE]: magenta.with(bold),
-  [Level.INFO]: white.with(bold),
-  [Level.DEBUG]: green.with(bold),
+  [Level.VERBOSE]: green.with(bold),
+  [Level.INFO]: cyan.with(bold),
   [Level.WARN]: yellow.with(bold),
   [Level.ERROR]: red.with(bold),
+  [Level.DEBUG]: white.with(bold),
 };
 // I want these all the same width!
 const levelStrings = {
-  [Level.TRACE]: levelColors[Level.TRACE]("TRACE"),
   [Level.VERBOSE]: levelColors[Level.VERBOSE]("VRBSE"),
   [Level.INFO]: levelColors[Level.INFO](" INFO"),
-  [Level.DEBUG]: levelColors[Level.DEBUG]("DEBUG"),
   [Level.WARN]: levelColors[Level.WARN](" WARN"),
   [Level.ERROR]: levelColors[Level.ERROR]("ERROR"),
+  [Level.DEBUG]: levelColors[Level.DEBUG]("DEBUG"),
 };
 
 /**

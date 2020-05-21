@@ -68,3 +68,21 @@ export function createTopProperty<Top, Sub, Ctx extends Context>(
     return loaded.prop;
   };
 }
+
+const throwByDefault = () => {
+  throw new Error("cannot `get` value from Context, not `set`");
+};
+
+export function getterSetter<T>(
+  getDefault: (ctx: Context) => T = throwByDefault
+): [(ctx: Context) => T, (ctx: Context, value: T) => void] {
+  const map = new WeakMap<Context, T>();
+  return [
+    function get(ctx: Context): T {
+      return map.get(ctx) ?? getDefault(ctx);
+    },
+    function set(ctx: Context, value: T) {
+      map.set(ctx, value);
+    },
+  ];
+}

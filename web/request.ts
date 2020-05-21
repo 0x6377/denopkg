@@ -25,6 +25,8 @@ export class Request {
   // this inbound Request
   #req: ServerRequest;
   #res: Response;
+  #_url: URL | undefined;
+  #_method: string | undefined;
 
   constructor(
     req: ServerRequest,
@@ -43,6 +45,28 @@ export class Request {
   }
   public del(header: string) {
     this.#res.headers.delete(header);
+  }
+
+  public get method() {
+    return this.#_method ?? (this.#_method = this.#req.method.toLowerCase());
+  }
+
+  public get URL() {
+    // lazily build the full URL object
+    return this.#_url ?? (this.#_url = this.createURL());
+  }
+
+  private createURL() {
+    // #req.url is the pathname only.
+    // we need to build the full URL.
+    // so we need the host header,
+    const host = this.get("host") ?? "0.0.0.0";
+    const xfp = this.options.trustProxy ? this.get("x-forwarded-proto") : null;
+    const proto = xfp && xfp.toLowerCase() === "https" ? "https" : "http";
+
+    const constructed = `${proto}://${host}${this.#req.url}`;
+    console.log(constructed);
+    return new URL(constructed);
   }
 
   public get contentLength() {
@@ -78,8 +102,11 @@ export class Request {
   }
 
   public internalServerError(err: Error) {
-    // if env === "development" add error
-    this.response(Status.InternalServerError, "Internal Server Error");
+    let text = "Internal Server Error";
+    if (this.options.env === "development") {
+      text += `\n\n${err.stack}`;
+    }
+    this.response(Status.InternalServerError, text);
   }
 
   public redirect(url: URL, { permanent = false }: { permanent?: boolean }) {

@@ -1,13 +1,6 @@
-import {
-  serve,
-  ServerRequest,
-  Status,
-  Response as StdResponse,
-} from "https://deno.land/std/http/mod.ts";
 import { Context } from "../context/mod.ts";
 
-import { Request, Response } from "./request.ts";
-import { WebOptions, defaultWebOptions } from "./options.ts";
+import { Request } from "./request.ts";
 
 export type Handle<Ctx extends Context> = {
   req: Request;
@@ -17,58 +10,37 @@ export type Handle<Ctx extends Context> = {
 
 export type Middleware<Ctx extends Context = Context> = (h: Handle<Ctx>) => any;
 
-export function web<Ctx extends Context>(
-  ctx: Ctx,
-  options?: Partial<WebOptions>
-): Web<Ctx> {
-  return new Web(ctx, options);
-}
+export const composer = () => memo(compose);
 
-class Web<Ctx extends Context> {
-  #middleware: Array<Middleware<Ctx>> = [];
-  #ctx: Ctx;
-  #options: Readonly<WebOptions>;
-
-  constructor(ctx: Ctx, options: Partial<WebOptions> = {}) {
-    this.#ctx = ctx;
-    this.#options = Object.assign({}, defaultWebOptions, options);
+/**
+ * Compose multiple middleware in a self-contained stack.
+ * This means the `next` function passed in initially will
+ * bypass the entire stack and return control to the caller.
+ * The inner `next` functions will pass control up the stack
+ * as expected.
+ * This allows us to create small pockets of self contained functionality.
+ */
+export const compose = <Ctx extends Context>(
+  ...middlewares: Middleware<Ctx>[]
+): Middleware<Ctx> => {
+  if (middlewares.length === 0) {
+    throw new Error("must pass at least one middleware to `compose`");
   }
-
-  use(middleware: Middleware<Ctx>) {
-    this.#middleware.push(middleware);
+  if (middlewares.length === 1) {
+    return middlewares[0];
   }
-
-  async listen(...args: Parameters<typeof serve>) {
-    const s = serve(...args);
-    this.#ctx.wait().then(() => {
-      s.close();
-    });
-    for await (const req of s) {
-      // this must be non-blocking,
-      // although this is the right position to apply backpressure
-      // if we want to limit the number of in-flight requests.
-      this.handle(req);
-    }
-  }
-
-  private async handle(r: ServerRequest) {
-    const ctx = this.#ctx.child();
-    // configuratble deadline?
-    // lets take the cancel in the case the client
-    // disconnects.
-    const res: Response = {
-      status: Status.NotFound,
-      headers: new Headers(),
-      body: "Not Found",
-    };
-    const req = new Request(r, res, this.#options);
-
-    const runMiddleware = async (index: number) => {
-      const m = this.#middleware[index];
+  const outerRun = (outerNext: Handle<Ctx>["next"]) => {
+    return async function innerRun(
+      index: number,
+      req: Request,
+      ctx: Ctx
+    ): Promise<any> {
+      const m = middlewares[index];
       if (!m) {
-        return;
+        return outerNext();
       }
       let nextCalled = false;
+      let nextDone = false;
       let nextPromise: Promise<any> = Promise.resolve();
       const next = () => {
         if (nextCalled) {
@@ -78,43 +50,37 @@ class Web<Ctx extends Context> {
         }
         nextCalled = true;
         // move on to the next middleware. before we return.
-        nextPromise = runMiddleware(index + 1);
-        return nextPromise;
+        nextPromise = innerRun(index + 1, req, ctx);
+        return nextPromise.finally(() => {
+          nextDone = true;
+        });
       };
-      const midPromise = m({ req, next, ctx });
-      // wait until BOTH next and current have resolved.
-      await Promise.all([nextPromise, midPromise]);
+      await m({ req, ctx, next }).finally(() => {
+        if (nextCalled && !nextDone) {
+          throw new Error(
+            "middleware did not wait for `next` to complete.\n" +
+              "Either `await next()` it or `return next()`"
+          );
+        }
+      });
     };
-    try {
-      await runMiddleware(0);
-    } catch (e) {
-      // error!
-      req.internalServerError(e);
-    }
-    try {
-      await r.respond(toStdResponse(res));
-    } catch (e) {
-      this.#options.errorHandler(e);
-    }
-    await ctx.done();
-  }
-}
+  };
+  return ({ req, ctx, next }) => outerRun(next)(0, req, ctx);
+};
 
-function toStdResponse(r: Response): StdResponse {
-  // only the body is "wrong"
-  // stdreponse has undefined | Uint8Array | Reader | string
-  const ok =
-    r.body === undefined ||
-    r.body instanceof Uint8Array ||
-    typeof (r.body as any)?.read === "function" || // Deno.Reader
-    typeof r.body === "string";
-
-  if (!ok) {
-    // otherwise we need to JSON.stringify the body (and set the content-type)
-    if (!r.headers.has("content-type")) {
-      r.headers.set("content-type", "application/json");
+function memo<T extends (...args: any) => any>(
+  fn: T
+): (...args: Parameters<T>) => ReturnType<T> {
+  let lastArgs: Parameters<T>;
+  let lastResult: ReturnType<T>;
+  return (...args) => {
+    if (
+      !lastArgs ||
+      (args as Array<any>).some((arg, i) => arg !== lastArgs[i])
+    ) {
+      lastArgs = args;
+      lastResult = fn(...(args as Array<any>));
     }
-    r.body = JSON.stringify(r.body);
-  }
-  return r as StdResponse;
+    return lastResult;
+  };
 }

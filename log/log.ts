@@ -3,6 +3,7 @@ import { LogFormatter, RecordMeta } from "./fmt.ts";
 import { jsonFormatter } from "./fmt/json.ts";
 import { Level, LevelNames, getLevelName } from "./levels.ts";
 import { tagEnabled } from "./debug.ts";
+import { textFormatter } from "./fmt/text.ts";
 
 // The log function returns a promise which is guarranteed not to reject,
 // errors are handled by the `onError` option. If you don't want to wait
@@ -13,13 +14,14 @@ export type LogFn = {
   (props: RecordMeta): void;
 };
 
-export type Logger = {
-  [lvl in LevelNames]: LogFn;
-} & {
+export type LogMethods = { [lvl in LevelNames]: LogFn } & {
   // this is a logger that is only enabled IFF LOG_DEBUG=tag,...
   // if the environment variable is set this ALWAYS logs, else it NEVER
   // logs.
   debuglog(tag: string): LogFn;
+};
+
+export type Logger = LogMethods & {
   // bind props to _this_ logger
   bind(props: RecordMeta): void;
   // create a new logger with current props AND new ones. current logger not affected
@@ -67,7 +69,9 @@ function setDefaultOptions(partial: Partial<LogOptions>): LogInternals {
   const opts = Object.assign(
     {
       level: Level.ALL,
-      formatter: jsonFormatter(),
+      formatter: Deno.isatty(Deno.stdout.rid)
+        ? jsonFormatter()
+        : textFormatter(),
       sink: Deno.stdout,
       onError: console.error,
     },

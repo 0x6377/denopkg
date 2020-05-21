@@ -1,4 +1,4 @@
-import { web } from "./handling.ts";
+import { web } from "./mod.ts";
 import { create } from "../context/mod.ts";
 
 const parent = create();

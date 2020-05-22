@@ -42,7 +42,6 @@ export class Request {
   ) {
     this.#req = req;
     this.#res = res;
-    console.log(this.#req);
   }
 
   public get(header: string): string | null {

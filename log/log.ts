@@ -70,8 +70,8 @@ function setDefaultOptions(partial: Partial<LogOptions>): LogInternals {
     {
       level: Level.ALL,
       formatter: Deno.isatty(Deno.stdout.rid)
-        ? jsonFormatter()
-        : textFormatter(),
+        ? textFormatter()
+        : jsonFormatter(),
       sink: Deno.stdout,
       onError: console.error,
     },
@@ -161,6 +161,9 @@ function makeLogLevelFn(level: Level, extraMeta: RecordMeta = {}): LogFn {
   };
 }
 
+// per-logger $debugCache
+const $debugCache = Symbol();
+
 const prototype = {
   [getLevelName(Level.VERBOSE)]: makeLogLevelFn(Level.VERBOSE),
   [getLevelName(Level.INFO)]: makeLogLevelFn(Level.INFO),
@@ -175,12 +178,44 @@ const prototype = {
     // update internal props.
     Object.assign(this.props, props);
   },
-  debuglog(this: Logger, tag: string): LogFn {
-    if (tagEnabled(tag)) {
-      return makeLogLevelFn(Level.DEBUG, { $debug: tag }).bind(this);
+  debuglog(
+    this: Logger & { [$debugCache]?: Map<string, LogFn> },
+    tag: string
+  ): LogFn {
+    const cache =
+      this[$debugCache] ?? (this[$debugCache] = new Map<string, LogFn>());
+    let fn = cache.get(tag);
+    if (!fn) {
+      if (tagEnabled(tag)) {
+        // we should cache this on the logger.
+        fn = makeLogLevelFn(Level.DEBUG, { $debug: tag }).bind(this);
+      } else {
+        fn = async () => {
+          // no-op
+        };
+      }
     }
-    return async () => {
-      // no-op
-    };
+    return fn;
   },
 } as Logger;
+
+// here we store a reference to a user-defined logger function.
+let globalLogger: Logger = create();
+export function setGlobalDebug(log: Logger) {
+  globalLogger = log;
+}
+
+// This is a "global" debug log that by default logs to
+// stderr a bit like node's util.debuglog
+// but you can call `setGlobalDebugLog` to make your
+// own debug logger, (probably to attach a Logger instance)
+// best to do this as early as possible, preferably _before_
+// instantiating any modules that might use it.
+export function globalDebug(tag: string): LogFn {
+  // this needs to be lazy!
+  return (...args: any[]) => {
+    // @ts-ignore this function is returned as a LogFn,
+    // so we know this is OK.
+    return globalLogger.debuglog(tag)(...args);
+  };
+}

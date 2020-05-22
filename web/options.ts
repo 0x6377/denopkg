@@ -17,9 +17,6 @@ export type WebOptions = {
   // or that we could not write to the response
   errorHandler: (e: Error) => void;
 
-  // This is a handle to add debug logging if you want it.
-  debug: (...args: any[]) => void;
-
   // Disable the X-Clacks-Overhead header
   noClacksOverhead?: boolean;
 
@@ -28,7 +25,10 @@ export type WebOptions = {
 
   // max inflight requests. If this value > 0 then
   // we ensure that the server is only handling this
-  // many requests concurrently.
+  // many requests concurrently, however I don't think
+  // the backpressure actually works, i.e. I think the
+  // server still accepts connections and parses requests.
+  // basically, this is likely useless in almost all cases.
   // defaults to: 0 (unlimited)
   maxInflightRequests: number;
 
@@ -49,5 +49,4 @@ export const defaultWebOptions: WebOptions = {
   proxyHostHeader: "x-forwarded-host",
   env: "development",
   errorHandler: console.error,
-  debug: () => {},
 };

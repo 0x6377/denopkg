@@ -10,6 +10,9 @@ import { Context, create } from "../context/mod.ts";
 import { Middleware, composer, compose } from "./handling.ts";
 import { Request, Response } from "./request.ts";
 import { createTokenBucket } from "./tokens.ts";
+import { globalDebug } from "../log/mod.ts";
+
+const debugRequest = globalDebug("web:req");
 
 function web(options?: Partial<WebOptions>): Web<Context>;
 function web<Ctx extends Context>(
@@ -63,18 +66,27 @@ class Web<Ctx extends Context> {
         ? createTokenBucket(this.#options.maxInflightRequests)
         : false;
     for await (const req of s) {
+      const ctx = this.#ctx.child();
+      debugRequest(
+        { request: ctx.id },
+        "request recieved: %s %s",
+        req.method,
+        req.url
+      );
       // this is the right position to apply backpressure
       // if we want to limit the number of in-flight requests.
       const tok = tokens && (await tokens.get());
-      this.handle(req).finally(() => {
+      debugRequest({ request: ctx.id }, "starting handle cycle");
+      this.handle(ctx, req).finally(async () => {
         // make sure to return the token!
+        debugRequest({ request: ctx.id }, "handle cycle complete");
         tok && tok.return();
+        await ctx.done();
       });
     }
   }
 
-  private async handle(r: ServerRequest) {
-    const ctx = this.#ctx.child();
+  private async handle(ctx: Ctx, r: ServerRequest) {
     // configuratble deadline?
     // lets take the cancel in the case the client
     // disconnects.
@@ -110,17 +122,30 @@ class Web<Ctx extends Context> {
     const req = new Request(r, res, this.#options);
     const composed = this.middleware();
     try {
+      debugRequest({ request: ctx.id }, "before middleware");
       await composed({ req, ctx, next: async () => {} });
-    } catch (e) {
+      debugRequest({ request: ctx.id }, "after middleware");
+    } catch (error) {
       // error!
-      req.internalServerError(e);
+      debugRequest(
+        { request: ctx.id, error },
+        "middleware error: %s",
+        error.message
+      );
+      req.internalServerError(error);
     }
     try {
+      debugRequest({ request: ctx.id }, "sending response %d", res.status);
       await r.respond(toStdResponse(res));
-    } catch (e) {
-      this.#options.errorHandler(e);
+      debugRequest({ request: ctx.id }, "sent response");
+    } catch (error) {
+      debugRequest(
+        { request: ctx.id, error },
+        "error sending response: %s",
+        error.message
+      );
+      this.#options.errorHandler(error);
     }
-    await ctx.done();
   }
 }
 

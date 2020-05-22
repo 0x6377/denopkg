@@ -4,21 +4,23 @@ import { Level } from "../levels.ts";
 // we can do relative imports even in the mono-repo, because it will all be served
 // from a common root anyway, so they will resolve
 import {
-  red,
   cyan,
   gray,
-  yellow,
-  green,
   bold,
-  white,
+  cyanBright,
+  greenBright,
+  whiteBright,
+  yellowBright,
+  redBright,
+  inverse,
 } from "../../color/mod.ts";
 
 const levelColors = {
-  [Level.VERBOSE]: green.with(bold),
-  [Level.INFO]: cyan.with(bold),
-  [Level.WARN]: yellow.with(bold),
-  [Level.ERROR]: red.with(bold),
-  [Level.DEBUG]: white.with(bold),
+  [Level.VERBOSE]: greenBright.with(bold),
+  [Level.INFO]: cyanBright.with(bold),
+  [Level.WARN]: yellowBright.with(bold),
+  [Level.ERROR]: redBright.with(bold),
+  [Level.DEBUG]: whiteBright.with(bold),
 };
 // I want these all the same width!
 const levelStrings = {
@@ -28,6 +30,8 @@ const levelStrings = {
   [Level.ERROR]: levelColors[Level.ERROR]("ERROR"),
   [Level.DEBUG]: levelColors[Level.DEBUG]("DEBUG"),
 };
+
+const debugTagColor = yellowBright.with(bold);
 
 /**
  * Text Formatter: Output for humans
@@ -43,7 +47,8 @@ export const textFormatter: (opts?: Partial<TextOptions>) => LogFormatter = (
   const width = 9 + formatTime(initialised, options.time, initialised).length;
   const linePad = "\n" + " ".repeat(width);
   return ({ level, time, meta, msg }) => {
-    const metaStr = Object.entries(meta).reduce<string>(
+    const { $debug = false, ...rest } = meta;
+    const metaStr = Object.entries(rest).reduce<string>(
       (s, [k, v]) => `${s}\n    - ${cyan(k)}: ${Deno.inspect(v)}`,
       ""
     );
@@ -52,6 +57,9 @@ export const textFormatter: (opts?: Partial<TextOptions>) => LogFormatter = (
     const ts = clr(formatTime(time, options.time, initialised));
     let txt = msg.trim().replace(/\n/gm, linePad);
     txt = txt ? clr(txt) : gray("<no message>");
+    if ($debug !== false) {
+      txt = `${debugTagColor($debug)} ${txt}`;
+    }
     const str = `${lvl} [${ts}] ${txt}${metaStr}\n`;
     return encoder.encode(str);
   };

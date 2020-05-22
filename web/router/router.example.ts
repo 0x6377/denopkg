@@ -1,9 +1,7 @@
 import { web } from "../mod.ts";
-import { create } from "../../context/mod.ts";
 import { getRouteParams, createRouter } from "./middleware.ts";
 
-const parent = create();
-const app = web(parent);
+const app = web();
 const router = createRouter();
 
 router.get("/foo/:bar", ({ req, ctx }) => {

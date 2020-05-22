@@ -1,15 +1,13 @@
-import { Middleware } from "../handling.ts";
 import { Context } from "../../context/mod.ts";
-import { Status } from "../mod.ts";
-import { JSONany } from "../json.ts";
+import { Status, Middleware, JSONable } from "../mod.ts";
 
 type Promisable<T> = Promise<T> | T;
 
-type HealthChecker<T, Ctx extends Context> = (
+type HealthChecker<T extends JSONable, Ctx extends Context> = (
   ctx: Ctx
 ) => Promisable<HealthCheckResult<T>>;
 
-export type HealthCheckResult<T extends JSONany> = {
+export type HealthCheckResult<T extends JSONable> = {
   ok: boolean;
   status: T;
 };
@@ -43,12 +41,12 @@ const defaultOptions: HealthCheckOptions = {
   pingEndpoint: "/_ping",
 };
 
-export function healthcheckMiddleware<T extends JSONany, Ctx extends Context>(
+export function healthcheckMiddleware<T extends JSONable, Ctx extends Context>(
   parent: Ctx, // so we can watch for shutdown
   checker: HealthChecker<T, Ctx>,
   opts: Partial<HealthCheckOptions> = {}
 ): Middleware<Ctx> {
-  const options = Object.assign({}, defaultOptions, opts);
+  const options = { ...defaultOptions, ...opts };
   const getHealthCheck: typeof checker =
     options.runFrequency > 0
       ? periodicChecker(parent, options.runFrequency, checker)
@@ -66,7 +64,7 @@ export function healthcheckMiddleware<T extends JSONany, Ctx extends Context>(
   };
 }
 
-function periodicChecker<T extends JSONany, Ctx extends Context>(
+function periodicChecker<T extends JSONable, Ctx extends Context>(
   parent: Ctx,
   periodMs: number,
   checker: HealthChecker<T, Ctx>

@@ -55,7 +55,7 @@ export const compose = <Ctx extends Context>(
           nextDone = true;
         });
       };
-      await m({ req, ctx, next }).finally(() => {
+      await Promise.resolve(m({ req, ctx, next })).finally(() => {
         if (nextCalled && !nextDone) {
           throw new Error(
             "middleware did not wait for `next` to complete.\n" +

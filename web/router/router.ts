@@ -5,7 +5,7 @@ import {
   match,
 } from "https://deno.land/x/path_to_regexp/mod.ts";
 
-import { Middleware, composer, compose } from "../handling.ts";
+import { Middleware, composer, compose } from "../mod.ts";
 import { Context, getterSetter } from "../../context/mod.ts";
 
 const methods = [
@@ -59,12 +59,13 @@ export function createRouter<Ctx extends Context>(
     handler: Middleware<Ctx>,
     ...more: Middleware<Ctx>[]
   ) => Router<Ctx> {
+    const upperMethod = method.toUpperCase();
     return (path, handler, ...more) => {
       const matcher = match<Params>(path, options);
       const inner = compose(handler, ...more);
       const route: Middleware<Ctx> = (h) => {
         // next in here is the outer next function
-        if (h.req.method !== method) return h.next();
+        if (h.req.method !== upperMethod) return h.next();
         const m = matcher(h.req.URL.pathname);
         if (!m) return h.next();
         setParams(h.ctx, m.params);

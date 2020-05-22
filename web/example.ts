@@ -1,11 +1,9 @@
 import { web } from "./mod.ts";
-import { create } from "../context/mod.ts";
 
-const parent = create();
-const app = web(parent);
+const app = web();
 
 // run the app for only 10 seconds.
-parent.setDeadline(10_000);
+//app.context.setDeadline(10_000);
 
 app.use(({ req, ctx }) => {
   req.ok({ id: ctx.id });

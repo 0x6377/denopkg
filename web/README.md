@@ -20,22 +20,34 @@ These are the "features" I plan:
   - [x] raw / text / json decoding
 - [x] blessed middleware for routing
   - [x] path_to_regexp routing params
-  - [ ] mount router at `/prefix`
+- [x] mount middleware at `/prefix`
 - [ ] Graceful shutdown (stop listening, wait for inflight to complete)
-- [ ] `x-real-ip`,`x-forwarded-for/proto` support
+- [x] `x-real-ip`,`x-forwarded-for` support
 - [ ] signed cookie support
-- [ ] full origin/host/protocol inference (`x-forwarded-host`)
-- [ ] content-type /accept parsing
-- [ ] blessed error library (?)
+- [x] full origin/host/protocol inference (`x-forwarded-host`)
+- [ ] content-type / accept parsing
+- [ ] blessed error library (? I like `@hapi/boom`)
 - [ ] body validation (?)
-- [ ] status middleware
-- [ ] `X-Clacks-Overhead` middleware
-- [ ] Server header (default to Cern...)
+- [x] status middleware
+- [x] `X-Clacks-Overhead` ~middleware~ native!
+- [x] Server header (default to Cern...)
 - [ ] Websocket support (?)
 - [ ] EventSource (SSE) support (?)
 - [ ] See what `helmet` does for other frameworks
 - [ ] rate-limiter middleware
-- [ ] static file server middleware
-- [ ] metrics export
+- [ ] static file server middleware (deno has a stdlib here, but it's not directly usable)
+- [ ] metrics export (middleware?)
   - [ ] statsd style (push)
   - [ ] prometheus style (pull)
+
+## documentation
+
+I need another list for the completion of documentation for these modules.
+
+Of course, I'll let myself off for the moment, as pretty much all of the APIs are in flux...
+
+## thoughts
+
+can I extend the middleware as a promise API to include middleware as
+generators / async generators? Is there any benefit? What could I achieve with it that I couldn't with plain async functions?
+(I'm thinking about crankshaft here.)

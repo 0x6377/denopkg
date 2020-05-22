@@ -1,3 +1,5 @@
+import { v4 } from "https://deno.land/std/uuid/mod.ts";
+
 export interface Context {
   // a unique id.
   id: string;
@@ -31,10 +33,7 @@ export enum DoneReason {
 
 type IdFn = () => string;
 
-let lastId = 0;
-export function monotonicId(): string {
-  return `#${lastId++}`;
-}
+const defaultIdGenerator = v4.generate;
 
 // this is for a public, private method...
 const $beforeDone = Symbol();
@@ -122,7 +121,7 @@ function create<Ctx extends Context = Context>(
   } = {}
 ): Ctx | Context {
   const createChild = enhancedChild(args.enhancer ?? noEnhancer);
-  const id = args.id ?? monotonicId;
+  const id = args.id ?? defaultIdGenerator;
   const top = createChild();
   return top;
 

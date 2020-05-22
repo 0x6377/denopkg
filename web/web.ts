@@ -6,31 +6,48 @@ import {
 } from "https://deno.land/std/http/mod.ts";
 
 import { WebOptions, defaultWebOptions } from "./options.ts";
-import { Context } from "../context/mod.ts";
+import { Context, create } from "../context/mod.ts";
 import { Middleware, composer, compose } from "./handling.ts";
 import { Request, Response } from "./request.ts";
 import { createTokenBucket } from "./tokens.ts";
 
-export function web<Ctx extends Context>(
+function web(options?: Partial<WebOptions>): Web<Context>;
+function web<Ctx extends Context>(
   ctx: Ctx,
   options?: Partial<WebOptions>
-): Web<Ctx> {
-  return new Web(ctx, options);
+): Web<Ctx>;
+function web<Ctx extends Context = Context>(
+  ...args: any[]
+): Web<Ctx> | Web<Context> {
+  if (args.length <= 1) {
+    return new Web<Context>(create(), args[0] ?? {});
+  }
+  return new Web<Ctx>(args[0], args[1] ?? {});
 }
+export { web };
 
 class Web<Ctx extends Context> {
-  #middleware: Array<Middleware<Ctx>> = [];
+  #middlewares: Array<Middleware<Ctx>> = [];
   #ctx: Ctx;
   #options: Readonly<WebOptions>;
   #compose = composer();
 
   constructor(ctx: Ctx, options: Partial<WebOptions> = {}) {
     this.#ctx = ctx;
-    this.#options = Object.assign({}, defaultWebOptions, options);
+    this.#options = { ...defaultWebOptions, ...options };
   }
 
   use(middleware: Middleware<Ctx>, ...extra: Middleware<Ctx>[]) {
-    this.#middleware.push(compose(middleware, ...extra));
+    this.#middlewares.push(compose(middleware, ...extra));
+  }
+
+  middleware(): Middleware<Ctx> {
+    // use this whole app as a middleware for another app.
+    return this.#compose(...(this.#middlewares as Middleware[]));
+  }
+
+  public get context() {
+    return this.#ctx;
   }
 
   async listen(...args: Parameters<typeof serve>) {
@@ -69,12 +86,29 @@ class Web<Ctx extends Context> {
       }),
       body: "Not Found",
     };
-    if (!this.#options.noClacksOverhead) {
-      // In memorium (https://xclacksoverhead.org/home/about)
-      res.headers.set("x-clacks-overhead", "GNU Terry Pratchett");
-    }
+    // In memorium (https://xclacksoverhead.org/home/about)
+    maybeSet(
+      res.headers,
+      !this.#options.noClacksOverhead,
+      "x-clacks-overhead",
+      "GNU Terry Pratchett"
+    );
+    // DMX FTW!
+    maybeSet(
+      res.headers,
+      !this.#options.xNotGonGiveItToYa,
+      "x-gon-give-it-to",
+      "ya"
+    );
+    maybeSet(
+      res.headers,
+      this.#options.xPoweredBy,
+      "x-powered-by",
+      this.#options.xPoweredBy || ""
+    );
+
     const req = new Request(r, res, this.#options);
-    const composed = this.#compose(...(this.#middleware as Middleware[]));
+    const composed = this.middleware();
     try {
       await composed({ req, ctx, next: async () => {} });
     } catch (e) {
@@ -87,6 +121,17 @@ class Web<Ctx extends Context> {
       this.#options.errorHandler(e);
     }
     await ctx.done();
+  }
+}
+
+function maybeSet(
+  headers: Headers,
+  condition: any,
+  header: string,
+  value: string
+) {
+  if (condition) {
+    headers.set(header, value);
   }
 }
 

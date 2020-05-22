@@ -1,12 +1,8 @@
-export type JSONany =
-  | JSONmap
-  | JSONarray
-  | string
-  | number
-  | boolean
-  | JSONmethod;
-export type JSONvalue = JSONmap | JSONarray;
+export type TopLevelJSONable = JSONArray | JSONMap | JSONTopMethod;
+export type JSONable = JSONPrimitive | JSONArray | JSONMap | JSONMethod;
 
-type JSONmethod = { toJSON(): JSONany };
-type JSONmap = { [k: string]: JSONany };
-type JSONarray = Array<JSONany>;
+type JSONTopMethod = { toJSON(): JSONArray | JSONMap };
+type JSONPrimitive = string | number | boolean | undefined;
+type JSONArray = Array<JSONable>;
+type JSONMap = { [k: string]: JSONable };
+type JSONMethod = { toJSON(): JSONArray | JSONMap | JSONPrimitive };

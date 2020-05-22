@@ -18,10 +18,6 @@ reach for it for _any_ non-trivial application, and most trivial ones.
 
 In order to develop these, sometimes you need to cross-reference them.
 This works nicely in a monorepo environment without an import map as
-I can use relative paths. As they will be served with the same capability,
-it really doesn't matter.
+I can use relative paths. As they will be served with the same capability, it really doesn't matter.
 
-As for PRs and contributions, I doubt there will be enough interest... but I
-don't expect anything, nor will I likely merge anything, certainly not for
-the time being. I quite like it all being mine. I may take your ideas if you
-give them however...
+As for PRs and contributions, I doubt there will be enough interest... but I don't expect anything, nor will I likely merge anything, certainly not for the time being. I quite like it all being mine. I may take your ideas if you give them however...

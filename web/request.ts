@@ -1,5 +1,5 @@
 import { ServerRequest, Status } from "https://deno.land/std/http/mod.ts";
-import { JSONvalue } from "./json.ts";
+import { TopLevelJSONable } from "./json.ts";
 import { WebOptions } from "./options.ts";
 
 /**
@@ -19,13 +19,20 @@ export type Response = {
   body: ResponseBody;
 };
 
-type ResponseBody = Uint8Array | string | Deno.Reader | JSONvalue | undefined;
+type ResponseBody =
+  | Uint8Array
+  | string
+  | Deno.Reader
+  | TopLevelJSONable
+  | undefined;
 
 export class Request {
   // this inbound Request
   #req: ServerRequest;
   #res: Response;
+  #_ip: string | undefined;
   #_url: URL | undefined;
+  #_originalURL: Readonly<URL> | undefined;
   #_method: string | undefined;
 
   constructor(
@@ -35,6 +42,7 @@ export class Request {
   ) {
     this.#req = req;
     this.#res = res;
+    console.log(this.#req);
   }
 
   public get(header: string): string | null {
@@ -43,30 +51,100 @@ export class Request {
   public set(header: string, value: string) {
     this.#res.headers.set(header, value);
   }
-  public del(header: string) {
+  public append(header: string, value: string) {
+    this.#res.headers.append(header, value);
+  }
+  public delete(header: string) {
     this.#res.headers.delete(header);
   }
 
   public get method() {
-    return this.#_method ?? (this.#_method = this.#req.method.toLowerCase());
+    return this.#_method ?? (this.#_method = this.#req.method.toUpperCase());
   }
 
+  // this is whatever was sent in the request. verbatim.
+  public get URI(): string {
+    return this.#req.url;
+  }
+
+  // This is the full URL of the request. constructed from the available data.
+  // It tries to be as precise to what a user would have in the address bar
+  // as possible.
+  // it may not work when the requests are more unusual, such as a
+  // CONNECT request which will likely only have an AUTHORITY.
+  // TBH a server like this should probably not be handling
+  // CONNECT requests.
+  // `OPTIONS *` requests will have `/*` in the pathname.
   public get URL() {
     // lazily build the full URL object
-    return this.#_url ?? (this.#_url = this.createURL());
+    this.#_url ?? this.createURLs();
+    return this.#_url!;
   }
 
-  private createURL() {
+  public get originalURL() {
+    this.#_originalURL ?? this.createURLs();
+    return this.#_originalURL!;
+  }
+
+  private createURLs() {
     // #req.url is the pathname only.
     // we need to build the full URL.
     // so we need the host header,
-    const host = this.get("host") ?? "0.0.0.0";
-    const xfp = this.options.trustProxy ? this.get("x-forwarded-proto") : null;
-    const proto = xfp && xfp.toLowerCase() === "https" ? "https" : "http";
+    // if trust proxy, try the x-forwarded-host
+    let host =
+      this.options.trustProxy && this.get(this.options.proxyHostHeader);
+    host = host || this.get("host") || "unknown";
+    const xfp = this.options.trustProxy
+      ? this.get(this.options.proxyProtoHeader)
+      : null;
+    const proto = (xfp && xfp.split(/\s*,\s*/, 1)[0]) || "http";
+    // RFC 7230, section 5.3: Must treat
+    //    GET /index.html HTTP/1.1
+    //    Host: www.google.com
+    // and
+    //    GET http://www.google.com/index.html HTTP/1.1
+    //    Host: doesntmatter
+    // the same. In the second case, any Host line is ignored.
 
-    const constructed = `${proto}://${host}${this.#req.url}`;
-    console.log(constructed);
-    return new URL(constructed);
+    // Also in a CONNECT call we should get an authority
+    // which is just host and port.
+
+    let parseable = this.#req.url;
+    if (/https?:\/\/.+/.test(this.#req.url)) {
+      // probably a full URL.
+      // no change.
+    } else if (/^[^\/]+:\d+$/.test(this.#req.url)) {
+      // probably just the authority
+      parseable = `http://${parseable}`;
+    } else {
+      // it's just the path.
+      if (parseable[0] === "/") {
+        parseable = `http://host${parseable}`;
+      } else {
+        parseable = `http://host/${parseable}`;
+      }
+    }
+    const url = new URL(parseable);
+    url.protocol = proto;
+    url.host = host;
+    this.#_originalURL = new URL(url);
+    this.#_url = new URL(url);
+  }
+
+  public get ip(): string {
+    return this.#_ip ?? (this.#_ip = this.getIP());
+  }
+
+  private getIP(): string {
+    let ip: string = "";
+    if (this.options.trustProxy) {
+      ip = (this.get(this.options.proxyIpHeader) ?? "").split(/\s*,\s*/, 1)[0];
+    }
+    if (!ip) {
+      const addr = this.#req.conn.remoteAddr;
+      ip = "hostname" in addr ? addr.hostname : "";
+    }
+    return ip;
   }
 
   public get contentLength() {
@@ -87,7 +165,7 @@ export class Request {
     return new TextDecoder().decode(await this.raw());
   }
 
-  public async json(): Promise<JSONvalue> {
+  public async json(): Promise<TopLevelJSONable> {
     return JSON.parse(await this.text());
   }
 

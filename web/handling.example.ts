@@ -1,8 +1,6 @@
 import { web, Middleware } from "./mod.ts";
-import { create } from "../context/mod.ts";
 
-const parent = create();
-const app = web(parent);
+const app = web();
 
 let indent = 0;
 

@@ -12,7 +12,6 @@ import {
   whiteBright,
   yellowBright,
   redBright,
-  inverse,
 } from "../../color/mod.ts";
 
 const levelColors = {

@@ -65,21 +65,19 @@ class Web<Ctx extends Context> {
       this.#options.maxInflightRequests > 0
         ? createTokenBucket(this.#options.maxInflightRequests)
         : false;
+    let inflight = 0;
     for await (const req of s) {
       const ctx = this.#ctx.child();
-      debugRequest(
-        { request: ctx.id },
-        "request recieved: %s %s",
-        req.method,
-        req.url
-      );
+      debugRequest({ request: ctx.id }, "recieved: %s %s", req.method, req.url);
       // this is the right position to apply backpressure
       // if we want to limit the number of in-flight requests.
       const tok = tokens && (await tokens.get());
-      debugRequest({ request: ctx.id }, "starting handle cycle");
+      inflight++;
+      debugRequest({ request: ctx.id, inflight }, "starting handle cycle");
       this.handle(ctx, req).finally(async () => {
         // make sure to return the token!
-        debugRequest({ request: ctx.id }, "handle cycle complete");
+        inflight--;
+        debugRequest({ request: ctx.id, inflight }, "handle cycle complete");
         tok && tok.return();
         await ctx.done();
       });

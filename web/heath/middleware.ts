@@ -7,10 +7,16 @@ type HealthChecker<T extends JSONable, Ctx extends Context> = (
   ctx: Ctx
 ) => Promisable<HealthCheckResult<T>>;
 
-export type HealthCheckResult<T extends JSONable> = {
-  ok: boolean;
-  status: T;
-};
+export type HealthCheckResult<
+  T extends JSONable | undefined = undefined
+> = T extends undefined
+  ? {
+      ok: boolean;
+    }
+  : {
+      ok: boolean;
+      status: T;
+    };
 
 export type HealthCheckOptions = {
   // if this <= 0: we run on demand (as called)

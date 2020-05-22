@@ -1,12 +1,16 @@
 import { web } from "../mod.ts";
 import { getRouteParams, createRouter } from "./middleware.ts";
 
-const app = web();
+const app = web({
+  maxInflightRequests: 3,
+});
 const router = createRouter();
 
 router.get("/foo/:bar", ({ req, ctx }) => {
   const { bar } = getRouteParams(ctx);
   req.ok({ bar });
+  // add a test delay
+  return new Promise((r) => setTimeout(r, 5000));
 });
 
 router.post("/bar/:foo", ({ req, ctx }) => {
@@ -26,4 +30,4 @@ router.put("/quux/:secret", ({ ctx, req, next }) => {
 
 app.use(router);
 
-app.listen(":3001");
+app.listen(":6377");

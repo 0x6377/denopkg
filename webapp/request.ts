@@ -1,6 +1,7 @@
 import { ServerRequest, Status } from "https://deno.land/std/http/mod.ts";
 import { TopLevelJSONable } from "./json.ts";
 import { WebOptions } from "./options.ts";
+import { ServerTiming } from "./server_timing.ts";
 
 /**
  * i.e. the bit that happens immediately after
@@ -34,6 +35,10 @@ export class Request {
   #_url: URL | undefined;
   #_originalURL: Readonly<URL> | undefined;
   #_method: string | undefined;
+  #_body_handled: boolean = false;
+  #_raw_body: Promise<Uint8Array> | undefined;
+
+  #server_timing: Array<ServerTiming> = [];
 
   constructor(
     req: ServerRequest,
@@ -149,23 +154,36 @@ export class Request {
   public get contentLength() {
     return this.#req.contentLength;
   }
-  public get reader(): Deno.Reader {
+  public get stream(): Deno.Reader {
+    if (this.#_body_handled) {
+      throw new Error("Attempt to read request body twice");
+    }
+    this.#_body_handled = true;
     return this.#req.body;
   }
 
-  public raw(): Promise<Uint8Array> {
-    // 4Mb max body size
-    return readBody(this.#req, 4 * 1024 * 1024);
+  public rawBody(): Promise<Uint8Array> {
+    // we cache the raw body.
+    // we could cache it all the way up to `jsonBody`, but I don't
+    // you probably only read it once anyway.
+    if (!this.#_raw_body) {
+      if (this.#_body_handled) {
+        throw new Error("Attempt to read request body twice");
+      }
+      this.#_body_handled = true;
+      this.#_raw_body = readBody(this.#req, this.options.maxBodySize);
+    }
+    return this.#_raw_body;
   }
 
   // utf8 only!
-  public async text(): Promise<string> {
+  public async textBody(): Promise<string> {
     // read all raw into text-encoder and dump
-    return new TextDecoder().decode(await this.raw());
+    return new TextDecoder().decode(await this.rawBody());
   }
 
-  public async json(): Promise<TopLevelJSONable> {
-    return JSON.parse(await this.text());
+  public async jsonBody(): Promise<TopLevelJSONable> {
+    return JSON.parse(await this.textBody());
   }
 
   public noContent() {
@@ -174,7 +192,8 @@ export class Request {
   public notFound() {
     this.response(Status.NotFound, "Not Found");
   }
-  public ok(body: ResponseBody) {
+
+  public ok(body: ResponseBody, contentType?: string) {
     this.response(Status.OK, body);
   }
 
@@ -194,7 +213,10 @@ export class Request {
     );
   }
 
-  public response(status: Status, body?: ResponseBody) {
+  public response(status: Status, body?: ResponseBody, contentType?: string) {
+    if (contentType) {
+      this.#res.headers.set("content-type", contentType);
+    }
     this.#res.body = body;
     this.#res.status = status;
   }

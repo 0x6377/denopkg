@@ -1,7 +1,7 @@
 import { mount } from "./middleware.ts";
-import { web, Middleware } from "../mod.ts";
+import { webapp, Middleware } from "../mod.ts";
 
-const app = web();
+const app = webapp();
 
 const m: Middleware = ({ req, next, ctx }) => {
   console.log({

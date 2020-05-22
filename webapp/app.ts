@@ -11,25 +11,26 @@ import { Middleware, composer, compose } from "./handling.ts";
 import { Request, Response } from "./request.ts";
 import { createTokenBucket } from "./tokens.ts";
 import { globalDebug } from "../log/mod.ts";
+import { WebHeaders } from "./headers.ts";
 
-const debugRequest = globalDebug("web:req");
+const debugRequest = globalDebug("webapp:req");
 
-function web(options?: Partial<WebOptions>): Web<Context>;
-function web<Ctx extends Context>(
+function webapp(options?: Partial<WebOptions>): WebApp<Context>;
+function webapp<Ctx extends Context>(
   ctx: Ctx,
   options?: Partial<WebOptions>
-): Web<Ctx>;
-function web<Ctx extends Context = Context>(
+): WebApp<Ctx>;
+function webapp<Ctx extends Context = Context>(
   ...args: any[]
-): Web<Ctx> | Web<Context> {
+): WebApp<Ctx> | WebApp<Context> {
   if (args.length <= 1) {
-    return new Web<Context>(create(), args[0] ?? {});
+    return new WebApp<Context>(create(), args[0] ?? {});
   }
-  return new Web<Ctx>(args[0], args[1] ?? {});
+  return new WebApp<Ctx>(args[0], args[1] ?? {});
 }
-export { web };
+export { webapp };
 
-class Web<Ctx extends Context> {
+class WebApp<Ctx extends Context> {
   #middlewares: Array<Middleware<Ctx>> = [];
   #ctx: Ctx;
   #options: Readonly<WebOptions>;
@@ -90,7 +91,7 @@ class Web<Ctx extends Context> {
     // disconnects.
     const res: Response = {
       status: Status.NotFound,
-      headers: new Headers({
+      headers: new WebHeaders({
         // something nice and old-school, straight out of RFC2616
         server: "CERN/3.0 libwww/2.17",
       }),

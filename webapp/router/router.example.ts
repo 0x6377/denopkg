@@ -1,7 +1,7 @@
-import { web } from "../mod.ts";
+import { webapp } from "../mod.ts";
 import { getRouteParams, createRouter } from "./middleware.ts";
 
-const app = web({
+const app = webapp({
   maxInflightRequests: 3,
 });
 const router = createRouter();

@@ -1,6 +1,6 @@
-import { web, Middleware } from "./mod.ts";
+import { webapp, Middleware } from "./mod.ts";
 
-const app = web();
+const app = webapp();
 
 let indent = 0;
 

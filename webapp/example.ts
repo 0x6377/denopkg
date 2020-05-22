@@ -1,6 +1,6 @@
-import { web } from "./mod.ts";
+import { webapp } from "./mod.ts";
 
-const app = web();
+const app = webapp();
 
 // run the app for only 10 seconds.
 //app.context.setDeadline(10_000);

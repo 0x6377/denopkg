@@ -26,6 +26,7 @@ These are the "features" I plan:
 - [ ] signed cookie support
 - [x] full origin/host/protocol inference (`x-forwarded-host`)
 - [ ] content-type / accept parsing
+- [ ] server timing support
 - [ ] blessed error library (? I like `@hapi/boom`)
 - [ ] body validation (?)
 - [x] status middleware

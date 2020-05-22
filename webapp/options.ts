@@ -17,6 +17,9 @@ export type WebOptions = {
   // or that we could not write to the response
   errorHandler: (e: Error) => void;
 
+  // Disable setting the server timing header
+  noServerTiming?: boolean;
+
   // Disable the X-Clacks-Overhead header
   noClacksOverhead?: boolean;
 

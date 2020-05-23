@@ -94,7 +94,7 @@ class ContextImpl implements Omit<Context, "child" | "top"> {
     }
     this.#deadline = setTimeout(
       () => this.#deferral(DoneReason.DeadlineExceeded),
-      ms
+      ms,
     );
   }
   public clearDeadline() {
@@ -118,7 +118,7 @@ function create<Ctx extends Context = Context>(
   args: {
     id?: IdFn;
     enhancer?: (c: Context) => Ctx;
-  } = {}
+  } = {},
 ): Ctx | Context {
   const createChild = enhancedChild(args.enhancer ?? noEnhancer);
   const id = args.id ?? defaultIdGenerator;
@@ -126,7 +126,7 @@ function create<Ctx extends Context = Context>(
   return top;
 
   function enhancedChild<C extends Context>(
-    en: (c: Context) => C
+    en: (c: Context) => C,
   ): (parent?: ContextImpl) => C {
     return (parent) => {
       const impl = new ContextImpl(id(), parent);
@@ -139,7 +139,7 @@ function create<Ctx extends Context = Context>(
             return createChild(impl);
           },
           top: () => top,
-        })
+        }),
       );
     };
   }

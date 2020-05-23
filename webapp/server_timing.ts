@@ -46,10 +46,9 @@ export class ServerTiming {
     const metrics = this.#metrics.slice();
     this.#metrics.length = 0;
     metrics.forEach(({ metric, durationMs }) => {
-      let dur =
-        durationMs === undefined
-          ? ""
-          : `;dur=${(durationMs / 1000).toFixed(3).replace(/.?0+$/, "")}`;
+      let dur = durationMs === undefined
+        ? ""
+        : `;dur=${(durationMs / 1000).toFixed(3).replace(/.?0+$/, "")}`;
       headers.append("server-timing", `${metric}${dur}`);
     });
   }

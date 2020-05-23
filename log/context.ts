@@ -9,7 +9,7 @@ type Decorator<Ctx extends Context> = (ctx: Ctx) => RecordMeta;
 
 export function createLogger<Ctx extends Context>(
   decorator: RecordMeta | Decorator<Ctx> = {},
-  options?: Partial<LogOptions>
+  options?: Partial<LogOptions>,
 ) {
   let props = {};
   let propFn: Decorator<Ctx> = () => ({});

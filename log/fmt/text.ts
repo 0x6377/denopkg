@@ -36,7 +36,7 @@ const debugTagColor = yellowBright.with(bold);
  * Text Formatter: Output for humans
  */
 export const textFormatter: (opts?: Partial<TextOptions>) => LogFormatter = (
-  opts = {}
+  opts = {},
 ) => {
   const options = Object.assign({}, defaultOptions, opts) as TextOptions;
   const encoder = new TextEncoder();
@@ -49,7 +49,7 @@ export const textFormatter: (opts?: Partial<TextOptions>) => LogFormatter = (
     const { $debug = false, ...rest } = meta;
     const metaStr = Object.entries(rest).reduce<string>(
       (s, [k, v]) => `${s}\n    - ${cyan(k)}: ${Deno.inspect(v)}`,
-      ""
+      "",
     );
     const lvl = levelStrings[level];
     const clr = levelColors[level];

@@ -5,7 +5,7 @@ function assertDoneReason(actual: DoneReason, expected: DoneReason) {
   assertEquals(
     actual,
     expected,
-    `Expected reason: '${DoneReason[expected]}', got '${DoneReason[actual]}'`
+    `Expected reason: '${DoneReason[expected]}', got '${DoneReason[actual]}'`,
   );
 }
 

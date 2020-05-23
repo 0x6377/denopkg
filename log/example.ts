@@ -13,7 +13,7 @@ const log = create(
   },
   {
     host: "localhost",
-  }
+  },
 );
 
 log.info({ version: Deno.version });
@@ -22,7 +22,7 @@ function logTest(level: LevelNames) {
   log[level](
     { level, priority: level[(level.toUpperCase() as unknown) as Level] },
     "this is the '%s' level.",
-    level
+    level,
   );
 }
 
@@ -56,7 +56,7 @@ const debug = log.debuglog("test:log");
 
 debug(
   { only: "with env" },
-  "Only logged when LOG_DEBUG=test:log or LOG_DEBUG=*, etc..."
+  "Only logged when LOG_DEBUG=test:log or LOG_DEBUG=*, etc...",
 );
 
 await log.flush();

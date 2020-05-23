@@ -20,7 +20,7 @@ const forceColor = (function () {
     return !!(v && ["1", "yes", "true"].includes(v.toLowerCase()));
   } catch (e) {
     console.error(
-      "Could not access ENV to check for FORCE_COLOR. Run with `--allow-env` to permit"
+      "Could not access ENV to check for FORCE_COLOR. Run with `--allow-env` to permit",
     );
   }
   return false;

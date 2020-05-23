@@ -3,7 +3,7 @@ import { Middleware } from "../handling.ts";
 
 export function mount<Ctx extends Context>(
   prefix: string,
-  m: Middleware<Ctx>
+  m: Middleware<Ctx>,
 ): Middleware<Ctx> {
   // ensure prefix starts with a slash and ends without one.
   const pre = `/${prefix.replace(/(^\/|^$)/g, "")}`;

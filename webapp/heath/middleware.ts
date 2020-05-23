@@ -4,19 +4,18 @@ import { Status, Middleware, JSONable } from "../mod.ts";
 type Promisable<T> = Promise<T> | T;
 
 type HealthChecker<T extends JSONable, Ctx extends Context> = (
-  ctx: Ctx
+  ctx: Ctx,
 ) => Promisable<HealthCheckResult<T>>;
 
 export type HealthCheckResult<
-  T extends JSONable | undefined = undefined
-> = T extends undefined
-  ? {
-      ok: boolean;
-    }
+  T extends JSONable | undefined = undefined,
+> = T extends undefined ? {
+  ok: boolean;
+}
   : {
-      ok: boolean;
-      status: T;
-    };
+    ok: boolean;
+    status: T;
+  };
 
 export type HealthCheckOptions = {
   // if this <= 0: we run on demand (as called)
@@ -50,13 +49,12 @@ const defaultOptions: HealthCheckOptions = {
 export function healthcheckMiddleware<T extends JSONable, Ctx extends Context>(
   parent: Ctx, // so we can watch for shutdown
   checker: HealthChecker<T, Ctx>,
-  opts: Partial<HealthCheckOptions> = {}
+  opts: Partial<HealthCheckOptions> = {},
 ): Middleware<Ctx> {
   const options = { ...defaultOptions, ...opts };
-  const getHealthCheck: typeof checker =
-    options.runFrequency > 0
-      ? periodicChecker(parent, options.runFrequency, checker)
-      : checker;
+  const getHealthCheck: typeof checker = options.runFrequency > 0
+    ? periodicChecker(parent, options.runFrequency, checker)
+    : checker;
   return async ({ req, next, ctx }) => {
     if (options.statusEndpoint && req.URL.pathname === options.statusEndpoint) {
       // this function _should_ not fail, it should always catch and return
@@ -64,7 +62,7 @@ export function healthcheckMiddleware<T extends JSONable, Ctx extends Context>(
       const status = await getHealthCheck(ctx);
       return req.response(
         status.ok ? Status.OK : Status.ServiceUnavailable,
-        status
+        status,
       );
     }
   };
@@ -73,7 +71,7 @@ export function healthcheckMiddleware<T extends JSONable, Ctx extends Context>(
 function periodicChecker<T extends JSONable, Ctx extends Context>(
   parent: Ctx,
   periodMs: number,
-  checker: HealthChecker<T, Ctx>
+  checker: HealthChecker<T, Ctx>,
 ): HealthChecker<T, Ctx> {
   let shutdown = false;
   let status: Promisable<HealthCheckResult<T>> = checker(parent);

@@ -75,7 +75,7 @@ function setDefaultOptions(partial: Partial<LogOptions>): LogInternals {
       sink: Deno.stdout,
       onError: console.error,
     },
-    partial
+    partial,
   );
   return Object.assign(opts, {
     queue: [],
@@ -86,7 +86,7 @@ function setDefaultOptions(partial: Partial<LogOptions>): LogInternals {
 // Create a new Logger with the given props, which writes to a given sink
 export function create(
   options: Partial<LogOptions> = {},
-  props: RecordMeta = {}
+  props: RecordMeta = {},
 ): ParentLogger {
   const opts = setDefaultOptions(options);
   return Object.assign(make(opts, props), {
@@ -107,10 +107,10 @@ async function log(
   time: number,
   level: Level,
   fmt: string,
-  args: any[]
+  args: any[],
 ): Promise<void> {
   options.queue.push(
-    options.formatter({ level, time, meta, msg: sprintf(fmt, ...args) })
+    options.formatter({ level, time, meta, msg: sprintf(fmt, ...args) }),
   );
   // enqueue a flush if the first one.
   if (options.queue.length === 1) {
@@ -155,7 +155,7 @@ function makeLogLevelFn(level: Level, extraMeta: RecordMeta = {}): LogFn {
         Date.now(),
         level,
         fmt,
-        args
+        args,
       );
     }
   };
@@ -180,10 +180,10 @@ const prototype = {
   },
   debuglog(
     this: Logger & { [$debugCache]?: Map<string, LogFn> },
-    tag: string
+    tag: string,
   ): LogFn {
-    const cache =
-      this[$debugCache] ?? (this[$debugCache] = new Map<string, LogFn>());
+    const cache = this[$debugCache] ??
+      (this[$debugCache] = new Map<string, LogFn>());
     let fn = cache.get(tag);
     if (!fn) {
       if (tagEnabled(tag)) {

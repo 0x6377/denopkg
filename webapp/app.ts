@@ -18,7 +18,7 @@ const debugRequest = globalDebug("webapp:req");
 function webapp(options?: Partial<WebOptions>): WebApp<Context>;
 function webapp<Ctx extends Context>(
   ctx: Ctx,
-  options?: Partial<WebOptions>
+  options?: Partial<WebOptions>,
 ): WebApp<Ctx>;
 function webapp<Ctx extends Context = Context>(
   ...args: any[]
@@ -62,10 +62,9 @@ class WebApp<Ctx extends Context> {
 
     // @todo: graceful server shutdown
 
-    let tokens =
-      this.#options.maxInflightRequests > 0
-        ? createTokenBucket(this.#options.maxInflightRequests)
-        : false;
+    let tokens = this.#options.maxInflightRequests > 0
+      ? createTokenBucket(this.#options.maxInflightRequests)
+      : false;
     let inflight = 0;
     for await (const req of s) {
       const ctx = this.#ctx.child();
@@ -102,20 +101,20 @@ class WebApp<Ctx extends Context> {
       res.headers,
       !this.#options.noClacksOverhead,
       "x-clacks-overhead",
-      "GNU Terry Pratchett"
+      "GNU Terry Pratchett",
     );
     // DMX FTW!
     maybeSet(
       res.headers,
       !this.#options.xNotGonGiveItToYa,
       "x-gon-give-it-to",
-      "ya"
+      "ya",
     );
     maybeSet(
       res.headers,
       this.#options.xPoweredBy,
       "x-powered-by",
-      this.#options.xPoweredBy || ""
+      this.#options.xPoweredBy || "",
     );
 
     const req = new Request(r, res, this.#options);
@@ -129,7 +128,7 @@ class WebApp<Ctx extends Context> {
       debugRequest(
         { request: ctx.id, error },
         "middleware error: %s",
-        error.message
+        error.message,
       );
       req.internalServerError(error);
     }
@@ -141,7 +140,7 @@ class WebApp<Ctx extends Context> {
       debugRequest(
         { request: ctx.id, error },
         "error sending response: %s",
-        error.message
+        error.message,
       );
       this.#options.errorHandler(error);
     }
@@ -152,7 +151,7 @@ function maybeSet(
   headers: Headers,
   condition: any,
   header: string,
-  value: string
+  value: string,
 ) {
   if (condition) {
     headers.set(header, value);
@@ -162,8 +161,7 @@ function maybeSet(
 function toStdResponse(r: Response): StdResponse {
   // only the body is "wrong"
   // stdreponse has undefined | Uint8Array | Reader | string
-  const ok =
-    r.body === undefined ||
+  const ok = r.body === undefined ||
     r.body instanceof Uint8Array ||
     typeof (r.body as any)?.read === "function" || // Deno.Reader
     typeof r.body === "string";

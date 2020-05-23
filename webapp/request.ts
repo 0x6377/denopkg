@@ -43,7 +43,7 @@ export class Request {
   constructor(
     req: ServerRequest,
     res: Response,
-    public readonly options: Readonly<WebOptions>
+    public readonly options: Readonly<WebOptions>,
   ) {
     this.#req = req;
     this.#res = res;
@@ -95,8 +95,8 @@ export class Request {
     // we need to build the full URL.
     // so we need the host header,
     // if trust proxy, try the x-forwarded-host
-    let host =
-      this.options.trustProxy && this.get(this.options.proxyHostHeader);
+    let host = this.options.trustProxy &&
+      this.get(this.options.proxyHostHeader);
     host = host || this.get("host") || "unknown";
     const xfp = this.options.trustProxy
       ? this.get(this.options.proxyProtoHeader)
@@ -209,7 +209,7 @@ export class Request {
     this.set("location", url.toString());
     this.response(
       permanent ? Status.PermanentRedirect : Status.TemporaryRedirect,
-      `Redirecting to: ${url}`
+      `Redirecting to: ${url}`,
     );
   }
 
@@ -226,7 +226,7 @@ export class Request {
 // and reset them after each request
 async function readBody(
   req: ServerRequest,
-  maxBodySize: number
+  maxBodySize: number,
 ): Promise<Uint8Array> {
   const bufSize = req.contentLength ?? maxBodySize;
   if (bufSize > maxBodySize) {

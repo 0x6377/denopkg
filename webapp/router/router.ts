@@ -39,7 +39,7 @@ const [getRouteParams, setParams] = getterSetter<Params>(() => ({}));
 export { getRouteParams };
 
 export function createRouter<Ctx extends Context>(
-  options?: ParseOptions & TokensToRegexpOptions & RegexpToFunctionOptions
+  options?: ParseOptions & TokensToRegexpOptions & RegexpToFunctionOptions,
 ): Router<Ctx> {
   const routes: Middleware<Ctx>[] = [];
   const memoizedCompose = composer();
@@ -53,7 +53,7 @@ export function createRouter<Ctx extends Context>(
   return router;
 
   function makeRouteFn(
-    method: MethodNames
+    method: MethodNames,
   ): (
     path: string,
     handler: Middleware<Ctx>,

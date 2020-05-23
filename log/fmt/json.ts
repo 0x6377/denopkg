@@ -8,7 +8,7 @@ import { Level } from "../levels.ts";
  * @TODO pino/graylog format adapters
  */
 export const jsonFormatter: (opts?: Partial<JsonOptions>) => LogFormatter = (
-  opts = {}
+  opts = {},
 ) => {
   const { style } = Object.assign({}, defaultOptions, opts);
   const encoder = new TextEncoder();
@@ -40,7 +40,7 @@ const defaultStyle: Transformer = (x) => x;
 
 const mapObject = (
   obj: RecordMeta,
-  fn: (a: [string, any]) => [string, any]
+  fn: (a: [string, any]) => [string, any],
 ): RecordMeta => {
   return Object.fromEntries(Object.entries(obj).map(fn));
 };

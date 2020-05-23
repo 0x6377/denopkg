@@ -9,7 +9,7 @@ export type DnsPrefetchControlOptions = {
 const defaultOptions = { allow: true };
 
 export function dnsPreftechControl(
-  opts: Partial<DnsPrefetchControlOptions> = {}
+  opts: Partial<DnsPrefetchControlOptions> = {},
 ): Middleware {
   const options = { ...defaultOptions, ...opts };
   const value = options.allow ? "on" : "off";

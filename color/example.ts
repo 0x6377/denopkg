@@ -13,7 +13,7 @@ ${bold("just bold")}
 ${boldRed("and bold red")}
 ${boldUnderline("bold and underline")}
 ${boldRedUnderline("all of them")}
-`
+`,
   );
 }
 console.log("Default color choice:");

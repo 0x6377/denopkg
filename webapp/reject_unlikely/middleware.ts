@@ -41,7 +41,7 @@ const defaultOptions: UnlikelyOptions = {
 };
 
 export function rejectUnlikelyMethods(
-  opts: Partial<UnlikelyOptions> = {}
+  opts: Partial<UnlikelyOptions> = {},
 ): Middleware {
   const options = { ...defaultOptions, ...opts };
   return ({ req, next }) => {

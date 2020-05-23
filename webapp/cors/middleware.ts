@@ -39,7 +39,7 @@ const defaultOptions: CorsOptions = {
 
 // handle cors, this is pretty much the koa implementation
 export function cors<Ctx extends Context = Context>(
-  opts: Partial<CorsOptions<Ctx>> = {}
+  opts: Partial<CorsOptions<Ctx>> = {},
 ): Middleware<Ctx> {
   const options = { ...defaultOptions, ...opts };
   const maxAge = options.maxAge && `${options.maxAge}`;
@@ -84,10 +84,9 @@ export function cors<Ctx extends Context = Context>(
         req.set("access-control-allow-methods", allowMethods);
       }
       if (allowHeaders) {
-        const returnHeaders =
-          allowHeaders === true
-            ? req.get("access-control-request-headers")
-            : allowHeaders;
+        const returnHeaders = allowHeaders === true
+          ? req.get("access-control-request-headers")
+          : allowHeaders;
         if (returnHeaders) {
           req.set("access-control-allow-headers", returnHeaders);
         }

@@ -27,7 +27,7 @@ type Loaded<Prop, Ctx extends Context> = {
 type Property<Prop extends any, Ctx extends Context> = (ctx: Ctx) => Prop;
 
 export function createProperty<Prop, Ctx extends Context>(
-  init: Initialiser<Prop, Ctx>
+  init: Initialiser<Prop, Ctx>,
 ): Property<Prop, Ctx> {
   const map = new WeakMap<Ctx, Loaded<Prop, Ctx>>();
   return (ctx: Ctx) => {
@@ -46,12 +46,12 @@ export function createProperty<Prop, Ctx extends Context>(
 
 type SubInit<Top, Sub, Ctx extends Context> = (
   ctx: Ctx,
-  top: Top
+  top: Top,
 ) => Loaded<Sub, Ctx>;
 
 export function createTopProperty<Top, Sub, Ctx extends Context>(
   init: Initialiser<Top, Ctx>,
-  sub: SubInit<Top, Sub, Ctx>
+  sub: SubInit<Top, Sub, Ctx>,
 ): Property<Sub, Ctx> {
   const mainProp = createProperty(init);
   const map = new WeakMap<Ctx, Loaded<Sub, Ctx>>();
@@ -74,7 +74,7 @@ const throwByDefault = () => {
 };
 
 export function getterSetter<T>(
-  getDefault: (ctx: Context) => T = throwByDefault
+  getDefault: (ctx: Context) => T = throwByDefault,
 ): [(ctx: Context) => T, (ctx: Context, value: T) => void] {
   const map = new WeakMap<Context, T>();
   return [

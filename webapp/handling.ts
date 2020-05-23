@@ -33,7 +33,7 @@ export const compose = <Ctx extends Context>(
     return async function innerRun(
       index: number,
       req: Request,
-      ctx: Ctx
+      ctx: Ctx,
     ): Promise<any> {
       const m = middlewares[index];
       if (!m) {
@@ -45,7 +45,7 @@ export const compose = <Ctx extends Context>(
       const next = () => {
         if (nextCalled) {
           throw new Error(
-            "`next` function called twice from the same middleware"
+            "`next` function called twice from the same middleware",
           );
         }
         nextCalled = true;
@@ -59,7 +59,7 @@ export const compose = <Ctx extends Context>(
         if (nextCalled && !nextDone) {
           throw new Error(
             "middleware did not wait for `next` to complete.\n" +
-              "Either `await next()` it or `return next()`"
+              "Either `await next()` it or `return next()`",
           );
         }
       });
@@ -69,7 +69,7 @@ export const compose = <Ctx extends Context>(
 };
 
 function memo<T extends (...args: any) => any>(
-  fn: T
+  fn: T,
 ): (...args: Parameters<T>) => ReturnType<T> {
   let lastArgs: Parameters<T>;
   let lastResult: ReturnType<T>;
